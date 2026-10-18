@@ -1,0 +1,115 @@
+[project]
+name = "lbt"
+version = "0.1.0"
+description = "link-brief-translator: summarize and translate articles via URL"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Defenser" }]
+requires-python = ">=3.11"
+dependencies = [
+    # HTTP fetching (async)
+    "httpx>=0.28",
+    # JS-rendered page fetching (optional at runtime, off by default)
+    "playwright>=1.49",
+    # Boilerplate HTML -> main content extraction
+    "readability-lxml>=0.8",
+    "lxml[html-clean]>=5.3",
+    # Structured JSON logging
+    "structlog>=24.4",
+    # Configuration from environment variables
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    # OpenAI-compatible LLM access (Ollama / llama.cpp / vLLM / cloud)
+    "openai>=1.55",
+    # API service
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    # Web UI (thin client over the API)
+    "streamlit>=1.40",
+    # CLI
+    "typer>=0.14",
+]
+
+[project.urls]
+Repository = "https://github.com/defenser/link-brief-translator"
+
+[project.scripts]
+lbt = "lbt.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "respx>=0.21",        # mock httpx (scraping + OpenAI-compatible calls)
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "lxml-stubs>=0.5",   # type stubs for lxml (readability-lxml has none)
+]
+
+[build-system]
+requires = ["uv_build>=0.8"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "lbt"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "S",   # bandit (security)
+    "C4",  # comprehensions
+    "T20", # ban print() in production code
+    "RUF", # ruff-specific
+]
+ignore = [
+    "S101",  # assert is fine in tests; handled via per-file-ignores below
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+"src/lbt/cli.py" = ["T201"]  # typer.echo is allowed, print is not; keep guard
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+pretty = true
+files = ["src/lbt"]
+
+[[tool.mypy.overrides]]
+module = ["lxml.*", "readability.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+asyncio_mode = "auto"
+markers = [
+    "slow: integration tests that call a real compact model (deselect in CI)",
+]
+
+[tool.coverage.run]
+source = ["src/lbt"]
+branch = true
+omit = ["src/lbt/ui/*"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
