@@ -1,0 +1,35 @@
+# Automated quality checks before every commit.
+# Install: uv run pre-commit install
+# Run all: uv run pre-commit run --all-files
+repos:
+  # --- Code quality: ruff lint + format ---
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # --- Static type checking ---
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        files: ^src/lbt/
+        additional_dependencies:
+          - pydantic>=2.9
+          - pydantic-settings>=2.6
+          - structlog>=24.4
+          - lxml-stubs>=0.5
+
+  # --- Basic hygiene ---
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: debug-statements
